@@ -1,0 +1,31 @@
+:root {
+  --navy: #101828;
+  --navy-light: #1D2939;
+  --coral: #FF6B35;
+  --coral-dark: #E85D2A;
+  --gold: #FFC857;
+  --cream: #FFF8F0;
+  --green: #22C55E;
+  --white: #FFFFFF;
+  --gray-bg: #F9FAFB;
+  --text-dark: #1F2937;
+  --text-gray: #6B7280;
+  --text-light: #9CA3AF;
+  --border: #E5E7EB;
+  --shadow-sm: 0 2px 8px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 16px rgba(16, 24, 40, 0.1);
+  --shadow-lg: 0 8px 32px rgba(16, 24, 40, 0.14);
+  --shadow-coral: 0 6px 24px rgba(255, 107, 53, 0.3);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --gradient-coral: linear-gradient(135deg, #FF6B35 0%, #FF8A5C 100%);
+  --gradient-gold: linear-gradient(135deg, #FFC857 0%, #FFB735 100%);
+  --gradient-dark: linear-gradient(135deg, #101828 0%, #1D2939 100%);
+  --gradient-brand: linear-gradient(135deg, #FF6B35 0%, #FFC857 100%);
+  --gradient-green: linear-gradient(135deg, #22C55E 0%, #4ADE80 100%);
+  --font-heading: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --header-height: 76px;
+}
