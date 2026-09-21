@@ -1,5 +1,8 @@
 import express from 'express'
 import cors from 'cors'
+import path from 'path'
+import fs from 'fs'
+import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
 import authRoutes from './routes/authRoutes.js'
 import restaurantRoutes from './routes/restaurantRoutes.js'
@@ -27,6 +30,17 @@ app.use('/api/coupons', couponRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/ai', aiRoutes)
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const distPath = path.join(__dirname, '..', 'dist')
+
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath))
+  app.get(/^\/(?!api\/).*/, (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'))
+  })
+}
 
 app.use(notFound)
 app.use(errorHandler)
