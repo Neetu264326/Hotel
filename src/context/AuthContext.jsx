@@ -17,9 +17,11 @@ const getStoredUser = () => {
 
 const isNetworkError = (error) => {
   if (!error) return true
-  if (error.status && error.status < 500) return false
-  const msg = (error.message || '').toLowerCase()
-  return /failed to fetch|network|load failed/i.test(msg) || !error.status
+  // 4xx responses are real backend messages (validation/auth) — surface them.
+  if (error.status > 0 && error.status < 500) return false
+  // No status (fetch/network failure) or 5xx (DB down, gateway/function
+  // timeout on Vercel) means the backend is unreachable — use guest mode.
+  return true
 }
 
 const nameFromEmail = (email = '') => {

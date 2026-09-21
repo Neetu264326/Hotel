@@ -119,7 +119,9 @@ export const CartProvider = ({ children }) => {
   )
   const [syncing, setSyncing] = useState(false)
 
-  const isAuthed = !!user
+  // Demo/guest sessions use a fake token that the API rejects (401), so keep
+  // their cart purely local. Only real accounts sync with the server cart.
+  const isAuthed = !!user && !user.isDemo
 
   useEffect(() => {
     if (!isAuthed) return

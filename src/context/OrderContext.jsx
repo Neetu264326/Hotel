@@ -89,9 +89,11 @@ const buildLocalOrder = ({ address, paymentMethod, deliveryOption, scheduleDateT
 
 const isNetworkError = (error) => {
   if (!error) return true
-  if (error.status && error.status < 500) return false
-  const msg = (error.message || '').toLowerCase()
-  return /failed to fetch|network|ecoconnrefused|load failed/i.test(msg) || !error.status
+  // 4xx are real backend messages (validation/auth) — surface them.
+  if (error.status > 0 && error.status < 500) return false
+  // No status (network failure) or 5xx (DB down, gateway/function timeout
+  // or crash on Vercel) means the backend is unreachable — use a local order.
+  return true
 }
 
 export const OrderProvider = ({ children }) => {
@@ -136,6 +138,21 @@ export const OrderProvider = ({ children }) => {
 
       if (!user) {
         throw new Error('Please login to place and confirm your order')
+      }
+
+      // Demo/guest accounts don't exist in the database and their token is
+      // rejected by the API — complete their order locally instead.
+      if (user.isDemo) {
+        const localOrder = buildLocalOrder({
+          address: safeAddress,
+          paymentMethod,
+          deliveryOption,
+          scheduleDateTime: orderDetails.scheduleDateTime,
+          cart,
+          restaurants,
+        })
+        setActiveOrder(localOrder)
+        return localOrder
       }
 
       try {
