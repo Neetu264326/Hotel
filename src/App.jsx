@@ -5,6 +5,7 @@ import Footer from './components/Footer'
 import LoadingSpinner from './components/LoadingSpinner'
 import ErrorBoundary from './components/ErrorBoundary'
 import ChatAssistant from './components/ChatAssistant'
+import AdminRoute from './components/AdminRoute'
 import { DataProvider } from './context/DataContext'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
@@ -14,6 +15,7 @@ const Home = lazy(() => import('./pages/Home'))
 const SearchResults = lazy(() => import('./pages/SearchResults'))
 const Restaurants = lazy(() => import('./pages/Restaurants'))
 const RestaurantDetails = lazy(() => import('./pages/RestaurantDetails'))
+const FoodDetails = lazy(() => import('./pages/FoodDetails'))
 const Cart = lazy(() => import('./pages/Cart'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 const Payment = lazy(() => import('./pages/Payment'))
@@ -23,6 +25,8 @@ const Offers = lazy(() => import('./pages/Offers'))
 const About = lazy(() => import('./pages/About'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
+const MyOrders = lazy(() => import('./pages/MyOrders'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 
 const pageMeta = {
   '/': { title: 'Delishful - Good Food. Delivered Fast.', desc: 'Discover delicious meals from your favorite restaurants and get them delivered to your doorstep, fast.' },
@@ -41,7 +45,11 @@ const pageMeta = {
 function usePageMeta() {
   const { pathname } = useLocation()
   useEffect(() => {
-    const meta = pageMeta[pathname] || pageMeta['/']
+    const meta =
+      pageMeta[pathname] ||
+      (pathname.startsWith('/food/')
+        ? { title: 'Food Details | Delishful', desc: 'View complete information, nutrition, allergens and reviews for this dish.' }
+        : pageMeta['/'])
     if (meta) {
       document.title = meta.title
       const existing = document.querySelector('meta[name="description"]')
@@ -76,10 +84,13 @@ function AppContent() {
             <Route path="/search" element={<SearchResults />} />
             <Route path="/restaurants" element={<Restaurants />} />
             <Route path="/restaurant/:id" element={<RestaurantDetails />} />
+            <Route path="/food/:id" element={<FoodDetails />} />
             <Route path="/offers" element={<Offers />} />
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/my-orders" element={<MyOrders />} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/payment" element={<Payment />} />

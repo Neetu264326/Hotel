@@ -6,6 +6,22 @@ import { coupons as fallbackCoupons } from '../data/coupons'
 
 const DataContext = createContext(null)
 
+// Local demo data uses `id`, while MongoDB API responses use `_id`. Keep one
+// predictable shape for every screen so links, menus and cart actions work in
+// both offline and API-backed modes.
+const normalizeId = (value) => (value === undefined || value === null ? value : String(value))
+
+const normalizeRestaurant = (restaurant) => ({
+  ...restaurant,
+  id: normalizeId(restaurant.id ?? restaurant._id),
+})
+
+const normalizeFood = (food) => ({
+  ...food,
+  id: normalizeId(food.id ?? food._id),
+  restaurantId: normalizeId(food.restaurantId),
+})
+
 export const DataProvider = ({ children }) => {
   const [restaurants, setRestaurants] = useState(fallbackRestaurants)
   const [foods, setFoods] = useState(fallbackFoods)
@@ -23,8 +39,8 @@ export const DataProvider = ({ children }) => {
         restaurantAPI.getCuisines(),
         couponAPI.getAll(),
       ])
-      setRestaurants(rests)
-      setFoods(allFoods)
+      setRestaurants(rests.map(normalizeRestaurant))
+      setFoods(allFoods.map(normalizeFood))
       setCuisines(cuis)
       setCoupons(allCoupons)
       setOffline(false)

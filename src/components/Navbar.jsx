@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Menu, X, ShoppingCart, MapPin, ChevronDown, Flame, LogOut, Check } from 'lucide-react'
+import { Menu, X, ShoppingCart, MapPin, ChevronDown, Flame, LogOut, Check, Navigation, Loader2 } from 'lucide-react'
 import SearchBar from './SearchBar'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
-import { locations, getLocation, setLocation, getCity } from '../utils/location'
+import { locations, getLocation, setLocation, getCity, subscribeLocation, detectCurrentLocation, geolocationErrorMessage } from '../utils/location'
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -20,6 +20,9 @@ const Navbar = () => {
   const [profileOpen, setProfileOpen] = useState(false)
   const [location, setLoc] = useState(getLocation)
   const [locPickerOpen, setLocPickerOpen] = useState(false)
+  const [locating, setLocating] = useState(false)
+  const [locError, setLocError] = useState('')
+  const [locNote, setLocNote] = useState('')
   const { itemCount } = useCart()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -32,6 +35,30 @@ const Navbar = () => {
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => subscribeLocation((label) => setLoc(label)), [])
+
+  const handleDetectLocation = async () => {
+    setLocating(true)
+    setLocError('')
+    setLocNote('')
+    try {
+      const { label, accuracy } = await detectCurrentLocation()
+      setLoc(label)
+      setLocation(label)
+      if (accuracy && accuracy > 2000) {
+        // Low-accuracy fix (WiFi/IP based) — keep the picker open so the
+        // user can verify and pick a city manually if it looks wrong.
+        setLocNote(`Detected: ${label} (accuracy ~${Math.round(accuracy / 1000)} km — please verify)`)
+      } else {
+        setLocPickerOpen(false)
+      }
+    } catch (err) {
+      setLocError(geolocationErrorMessage(err))
+    } finally {
+      setLocating(false)
+    }
+  }
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -143,7 +170,12 @@ const Navbar = () => {
               aria-label="Select location"
               aria-haspopup="listbox"
               aria-expanded={locPickerOpen}
-              onClick={() => setLocPickerOpen((o) => !o)}
+              onClick={() => {
+                setLocPickerOpen((o) => {
+                  if (!o) { setLocError(''); setLocNote('') }
+                  return !o
+                })
+              }}
               style={{ color: 'var(--navy)', fontSize: 14, fontWeight: 500 }}
             >
               <MapPin size={20} color="var(--coral)" style={{ flexShrink: 0 }} />
@@ -152,29 +184,47 @@ const Navbar = () => {
             </button>
             {locPickerOpen && (
               <div
-                role="listbox"
-                aria-label="Select delivery location"
                 className="animate-scale-in"
-                style={{ position: 'absolute', right: 0, top: 'calc(100% + 10px)', background: '#fff', borderRadius: 16, boxShadow: 'var(--shadow-lg)', minWidth: 230, padding: 8, zIndex: 70 }}
+                style={{ position: 'absolute', right: 0, top: 'calc(100% + 10px)', background: '#fff', borderRadius: 16, boxShadow: 'var(--shadow-lg)', minWidth: 250, padding: 8, zIndex: 70 }}
               >
-                {locations.map((l) => {
-                  const active = l.label === location
-                  return (
-                    <button
-                      key={l.label}
-                      role="option"
-                      aria-selected={active}
-                      onClick={() => { setLoc(l.label); setLocation(l.label); setLocPickerOpen(false) }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', borderRadius: 10, fontSize: 14, fontWeight: active ? 700 : 500, color: active ? 'var(--coral)' : 'var(--navy)', textAlign: 'left' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = '#FFF8F0' }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-                    >
-                      <MapPin size={16} color={active ? 'var(--coral)' : 'var(--text-light)'} />
-                      <span style={{ flex: 1 }}>{l.label}</span>
-                      {active && <Check size={16} color="var(--coral)" />}
-                    </button>
-                  )
-                })}
+                <button
+                  onClick={handleDetectLocation}
+                  disabled={locating}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', borderRadius: 10, fontSize: 14, fontWeight: 700, color: 'var(--coral)', textAlign: 'left', background: '#FFF8F0', border: 'none', cursor: locating ? 'wait' : 'pointer', marginBottom: 6, opacity: locating ? 0.7 : 1 }}
+                >
+                  {locating ? <Loader2 size={16} className="spin" /> : <Navigation size={16} />}
+                  {locating ? 'Detecting your location…' : 'Use my current location'}
+                </button>
+                {locError && (
+                  <p role="alert" style={{ fontSize: 12, color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 10px', marginBottom: 6, lineHeight: 1.4 }}>
+                    {locError}
+                  </p>
+                )}
+                {locNote && (
+                  <p role="status" style={{ fontSize: 12, color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '8px 10px', marginBottom: 6, lineHeight: 1.4 }}>
+                    {locNote}
+                  </p>
+                )}
+                <div role="listbox" aria-label="Select delivery location">
+                  {locations.map((l) => {
+                    const active = l.label === location
+                    return (
+                      <button
+                        key={l.label}
+                        role="option"
+                        aria-selected={active}
+                        onClick={() => { setLoc(l.label); setLocation(l.label); setLocPickerOpen(false) }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', borderRadius: 10, fontSize: 14, fontWeight: active ? 700 : 500, color: active ? 'var(--coral)' : 'var(--navy)', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#FFF8F0' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                      >
+                        <MapPin size={16} color={active ? 'var(--coral)' : 'var(--text-light)'} />
+                        <span style={{ flex: 1 }}>{l.label}</span>
+                        {active && <Check size={16} color="var(--coral)" />}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -229,9 +279,10 @@ const Navbar = () => {
                       <strong style={{ fontSize: 14, color: 'var(--navy)', display: 'block' }}>{user.name}</strong>
                       <span style={{ fontSize: 12, color: 'var(--text-gray)' }}>{user.email}</span>
                     </div>
-                    <button className="profile-menu-item" onClick={() => { setProfileOpen(false); navigate('/track-order') }} style={{ width: '100%', textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 600, color: 'var(--navy)' }}>
-                      Track my orders
+                    <button className="profile-menu-item" onClick={() => { setProfileOpen(false); navigate('/my-orders') }} style={{ width: '100%', textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 600, color: 'var(--navy)' }}>
+                      My orders
                     </button>
+                    {user.role === 'admin' && <button className="profile-menu-item" onClick={() => { setProfileOpen(false); navigate('/admin') }} style={{ width: '100%', textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 600, color: 'var(--navy)' }}>Admin dashboard</button>}
                     <button className="profile-menu-item" onClick={handleLogout} style={{ width: '100%', textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 600, color: '#EF4444', display: 'flex', alignItems: 'center', gap: 8 }}>
                       <LogOut size={16} /> Logout
                     </button>

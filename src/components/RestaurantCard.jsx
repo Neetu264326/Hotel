@@ -1,11 +1,27 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Star, Clock, Bike, Tag, Leaf, ChevronRight } from 'lucide-react'
 
 const RestaurantCard = ({ restaurant }) => {
+  const navigate = useNavigate()
   const ratingColor = restaurant.rating >= 4.5 ? '#22C55E' : restaurant.rating >= 4.0 ? '#FFC857' : '#FB923C'
+  const openDetails = () => navigate(`/restaurant/${restaurant.id}`)
 
   return (
-    <article className="restaurant-card card" aria-label={restaurant.name} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <article
+      className="restaurant-card card"
+      aria-label={`View details for ${restaurant.name}`}
+      onClick={openDetails}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          openDetails()
+        }
+      }}
+      role="link"
+      tabIndex={0}
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', cursor: 'pointer' }}
+    >
       <div className="restaurant-image-wrap" style={{ position: 'relative', overflow: 'hidden' }}>
         <img
           src={restaurant.image}
@@ -70,6 +86,7 @@ const RestaurantCard = ({ restaurant }) => {
 
         <Link
           to={`/restaurant/${restaurant.id}`}
+          onClick={(event) => event.stopPropagation()}
           className="btn btn-primary btn-block"
           style={{ marginTop: 'auto', padding: '12px', fontSize: 14, borderRadius: 12 }}
           aria-label={`View menu of ${restaurant.name}`}

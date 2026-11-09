@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { orderAPI } from '../api'
 import { useAuth } from './AuthContext'
 import { useCart } from './CartContext'
@@ -182,7 +182,7 @@ export const OrderProvider = ({ children }) => {
 
   const clearOrder = () => setActiveOrder(null)
 
-  const refreshOrder = async (orderId) => {
+  const refreshOrder = useCallback(async (orderId) => {
     try {
       const order = await orderAPI.getByOrderId(orderId)
       const normalized = normalizeOrder(order)
@@ -191,7 +191,7 @@ export const OrderProvider = ({ children }) => {
     } catch {
       return null
     }
-  }
+  }, [])
 
   return (
     <OrderContext.Provider value={{ activeOrder, placeOrder, clearOrder, refreshOrder, submitting }}>

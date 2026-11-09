@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Minus, Star, Clock, Flame } from 'lucide-react'
-import FoodModal from './FoodModal'
-import ModalBoundary from './ModalBoundary'
 import { useCart } from '../context/CartContext'
 
 const VegIcon = ({ veg }) => (
@@ -15,12 +14,17 @@ const VegIcon = ({ veg }) => (
   </span>
 )
 
-const FoodCard = ({ food, restaurantName }) => {
-  const [modalOpen, setModalOpen] = useState(false)
+const FoodCard = ({ food }) => {
+  const navigate = useNavigate()
   const { addItem, items, removeItem, updateQuantity } = useCart()
 
   const [addedAnim, setAddedAnim] = useState(false)
   const [addError, setAddError] = useState('')
+
+  const openDetails = (event) => {
+    event?.stopPropagation()
+    navigate(`/food/${food.id}`)
+  }
 
   const cartItem = items.find((i) => i.foodId === food.id)
   const inCartQty = cartItem ? cartItem.quantity : 0
@@ -33,9 +37,13 @@ const FoodCard = ({ food, restaurantName }) => {
 
       addItem(food, 0, 'Regular', [], '', 1).then((result) => {
         if (result && result.success === false) {
-          setAddError(result.message)
+          setAddError(
+            result.status === 404
+              ? 'This item is out of date — please refresh the page and try again.'
+              : result.message
+          )
           setAddedAnim(false)
-          setTimeout(() => setAddError(''), 3000)
+          setTimeout(() => setAddError(''), 4000)
           return
         }
         setTimeout(() => setAddedAnim(false), 500)
@@ -60,7 +68,16 @@ const FoodCard = ({ food, restaurantName }) => {
       <article
         className="food-card card"
         style={{ cursor: 'pointer', padding: 12, position: 'relative', overflow: 'hidden', minWidth: 0 }}
-        onClick={() => setModalOpen(true)}
+        onClick={openDetails}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            openDetails()
+          }
+        }}
+        tabIndex={0}
+        role="link"
         aria-label={`View ${food.name}`}
       >
         <div className="food-image-wrap" style={{ position: 'relative', overflow: 'hidden', borderRadius: 16 }}>
@@ -206,14 +223,16 @@ const FoodCard = ({ food, restaurantName }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, fontSize: 12, color: 'var(--text-light)' }}>
             <Clock size={13} /> {food.calories} kcal
           </div>
+          <button
+            type="button"
+            onClick={openDetails}
+            style={{ marginTop: 12, color: 'var(--coral)', fontSize: 13, fontWeight: 700, textDecoration: 'underline' }}
+            aria-label={`View complete details for ${food.name}`}
+          >
+            View details
+          </button>
         </div>
       </article>
-
-      {modalOpen && (
-        <ModalBoundary>
-          <FoodModal food={food} restaurantName={restaurantName} onClose={() => setModalOpen(false)} />
-        </ModalBoundary>
-      )}
     </>
   )
 }

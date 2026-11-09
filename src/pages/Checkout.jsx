@@ -6,28 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import AddressForm from '../components/AddressForm'
 import OrderSummary from '../components/OrderSummary'
 import { isIndianMobile, normalizePhone } from '../utils/validation'
-
-const reverseGeocode = async (lat, lon) => {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
-    { headers: { 'Accept-Language': 'en' } }
-  )
-  if (!res.ok) throw new Error('Geocoding failed')
-  const data = await res.json()
-  const a = data.address || {}
-  return {
-    fullName: '',
-    phone: '',
-    house: [a.house_number, a.building, a.residential].filter(Boolean).join(' ') || '',
-    street: [a.road, a.suburb, a.neighbourhood, a.quarter].filter(Boolean).join(', ') || '',
-    city: a.city || a.town || a.village || a.county || '',
-    state: a.state || '',
-    pincode: a.postcode || '',
-    landmark: [a.landmark, a.shop, a.amenity].filter(Boolean).join(', ') || '',
-    lat,
-    lon,
-  }
-}
+import { reverseGeocode } from '../utils/location'
 
 const Checkout = () => {
   const { items, deliveryFee } = useCart()
@@ -81,7 +60,7 @@ const Checkout = () => {
           setLocationError('Unable to get your location. Please enter manually.')
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     )
   }
 

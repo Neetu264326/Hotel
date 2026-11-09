@@ -65,6 +65,21 @@ const seed = async () => {
     await Coupon.insertMany(couponDocs)
     console.log(`Seeded ${couponDocs.length} coupons`)
 
+    // Optional, deliberate administrator bootstrap. Credentials only come
+    // from environment variables and are hashed by the User model hook.
+    if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+      await User.create({
+        name: process.env.ADMIN_NAME || 'Delishful Admin',
+        email: process.env.ADMIN_EMAIL,
+        phone: process.env.ADMIN_PHONE || '9000000000',
+        password: process.env.ADMIN_PASSWORD,
+        role: 'admin',
+      })
+      console.log(`Seeded admin account for ${process.env.ADMIN_EMAIL}`)
+    } else {
+      console.log('No admin seeded. Set ADMIN_EMAIL and ADMIN_PASSWORD to create one.')
+    }
+
     console.log('Seed completed successfully!')
     console.log('\nRestaurant ID map (for reference):')
     for (const { legacyId, mongoId } of insertedRestaurants) {

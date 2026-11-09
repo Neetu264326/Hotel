@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Clock, Bike, MapPin, Phone, PartyPopper } from 'lucide-react'
 import { useOrder } from '../context/OrderContext'
 import OrderTracker from '../components/OrderTracker'
@@ -33,12 +33,23 @@ const stepAtElapsed = (elapsedSec) => {
 }
 
 const TrackOrder = () => {
-  const { activeOrder } = useOrder()
+  const { activeOrder, refreshOrder } = useOrder()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [now, setNow] = useState(Date.now())
   const startedAtRef = useRef(Date.now())
 
   const order = activeOrder
+
+  // Server orders are refreshed regularly so an administrator's status
+  // changes appear on the customer tracking screen without a page reload.
+  useEffect(() => {
+    const orderId = searchParams.get('orderId') || order?.orderId
+    if (!orderId || order?.source === 'local') return undefined
+    refreshOrder(orderId)
+    const poll = setInterval(() => refreshOrder(orderId), 10000)
+    return () => clearInterval(poll)
+  }, [order?.orderId, order?.source, refreshOrder, searchParams])
 
   useEffect(() => {
     if (!order) return undefined
@@ -77,10 +88,11 @@ const TrackOrder = () => {
   }
 
   const elapsedSec = Math.floor((now - startedAtRef.current) / 1000)
-  const currentStep = stepAtElapsed(elapsedSec)
+  const serverSteps = { placed: 0, confirmed: 1, preparing: 2, 'out-for-delivery': 4, delivered: 5, cancelled: 0 }
+  const currentStep = order.source === 'local' ? stepAtElapsed(elapsedSec) : (serverSteps[order.status] ?? 0)
   const totalMinutes = order.estimatedMinutes || 35
   const remaining = Math.max(totalMinutes - Math.floor(elapsedSec / 60), 0)
-  const isDelivered = currentStep >= STEP_TIMES.length - 1
+  const isDelivered = order.status === 'delivered' || currentStep >= STEP_TIMES.length - 1
 
   const restaurant = order.restaurant
   const total = order.total

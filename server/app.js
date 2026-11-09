@@ -11,6 +11,7 @@ import couponRoutes from './routes/couponRoutes.js'
 import cartRoutes from './routes/cartRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
 import aiRoutes from './routes/aiRoutes.js'
+import adminRoutes from './routes/adminRoutes.js'
 import connectDB from './config/db.js'
 import { notFound, errorHandler } from './middleware/error.js'
 
@@ -75,6 +76,7 @@ app.use('/api/coupons', couponRoutes)
 app.use('/api/cart', cartRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/ai', aiRoutes)
+app.use('/api/admin', adminRoutes)
 
 const distPath = path.join(__dirname, '..', 'dist')
 

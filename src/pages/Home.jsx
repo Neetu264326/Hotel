@@ -1,14 +1,17 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, MapPin, ArrowRight, Tag, Star, ChefHat, Smartphone, Package, Truck, Bell, Check } from 'lucide-react'
+import { Search, MapPin, ArrowRight, Tag, Star, ChefHat, Smartphone, Package, Truck, Bell, Check, Navigation, Loader2 } from 'lucide-react'
 import RestaurantCard from '../components/RestaurantCard'
 import FoodCard from '../components/FoodCard'
 import { useData } from '../context/DataContext'
-import { locations, getLocation, setLocation } from '../utils/location'
+import { locations, getLocation, setLocation, subscribeLocation, detectCurrentLocation, geolocationErrorMessage } from '../utils/location'
 
 const HeroSection = () => {
   const [location, setLoc] = useState(getLocation)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [locating, setLocating] = useState(false)
+  const [locError, setLocError] = useState('')
+  const [locNote, setLocNote] = useState('')
   const pickerRef = useRef(null)
 
   useEffect(() => {
@@ -19,10 +22,32 @@ const HeroSection = () => {
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
 
+  useEffect(() => subscribeLocation((label) => setLoc(label)), [])
+
   const handleLocationSelect = (l) => {
     setLoc(l.label)
     setLocation(l.label)
     setPickerOpen(false)
+  }
+
+  const handleDetectLocation = async () => {
+    setLocating(true)
+    setLocError('')
+    setLocNote('')
+    try {
+      const { label, accuracy } = await detectCurrentLocation()
+      setLoc(label)
+      setLocation(label)
+      if (accuracy && accuracy > 2000) {
+        setLocNote(`Detected: ${label} (accuracy ~${Math.round(accuracy / 1000)} km — please verify)`)
+      } else {
+        setPickerOpen(false)
+      }
+    } catch (err) {
+      setLocError(geolocationErrorMessage(err))
+    } finally {
+      setLocating(false)
+    }
   }
 
   return (
@@ -54,7 +79,12 @@ const HeroSection = () => {
             <span style={{ color: 'var(--coral)', fontWeight: 700 }}>{location}</span>
             <span style={{ color: 'var(--text-light)' }}>•</span>
             <button
-              onClick={() => setPickerOpen((o) => !o)}
+              onClick={() =>
+                setPickerOpen((o) => {
+                  if (!o) { setLocError(''); setLocNote('') }
+                  return !o
+                })
+              }
               aria-haspopup="listbox"
               aria-expanded={pickerOpen}
               style={{ color: 'var(--navy)', fontWeight: 600, textDecoration: 'underline' }}
@@ -63,29 +93,47 @@ const HeroSection = () => {
             </button>
             {pickerOpen && (
               <div
-                role="listbox"
-                aria-label="Select delivery location"
                 className="location-picker animate-scale-in"
-                style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, background: '#fff', borderRadius: 16, boxShadow: 'var(--shadow-lg)', minWidth: 220, padding: 8, zIndex: 60 }}
+                style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, background: '#fff', borderRadius: 16, boxShadow: 'var(--shadow-lg)', minWidth: 250, padding: 8, zIndex: 60 }}
               >
-                {locations.map((l) => {
-                  const active = l.label === location
-                  return (
-                    <button
-                      key={l.label}
-                      role="option"
-                      aria-selected={active}
-                      onClick={() => handleLocationSelect(l)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', borderRadius: 10, fontSize: 14, fontWeight: active ? 700 : 500, color: active ? 'var(--coral)' : 'var(--navy)', textAlign: 'left' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = '#FFF8F0' }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-                    >
-                      <MapPin size={16} color={active ? 'var(--coral)' : 'var(--text-light)'} />
-                      <span style={{ flex: 1 }}>{l.label}</span>
-                      {active && <Check size={16} color="var(--coral)" />}
-                    </button>
-                  )
-                })}
+                <button
+                  onClick={handleDetectLocation}
+                  disabled={locating}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', borderRadius: 10, fontSize: 14, fontWeight: 700, color: 'var(--coral)', textAlign: 'left', background: '#FFF8F0', border: 'none', cursor: locating ? 'wait' : 'pointer', marginBottom: 6, opacity: locating ? 0.7 : 1 }}
+                >
+                  {locating ? <Loader2 size={16} className="spin" /> : <Navigation size={16} />}
+                  {locating ? 'Detecting your location…' : 'Use my current location'}
+                </button>
+                {locError && (
+                  <p role="alert" style={{ fontSize: 12, color: '#B91C1C', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 10px', marginBottom: 6, lineHeight: 1.4 }}>
+                    {locError}
+                  </p>
+                )}
+                {locNote && (
+                  <p role="status" style={{ fontSize: 12, color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '8px 10px', marginBottom: 6, lineHeight: 1.4 }}>
+                    {locNote}
+                  </p>
+                )}
+                <div role="listbox" aria-label="Select delivery location">
+                  {locations.map((l) => {
+                    const active = l.label === location
+                    return (
+                      <button
+                        key={l.label}
+                        role="option"
+                        aria-selected={active}
+                        onClick={() => handleLocationSelect(l)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', borderRadius: 10, fontSize: 14, fontWeight: active ? 700 : 500, color: active ? 'var(--coral)' : 'var(--navy)', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#FFF8F0' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                      >
+                        <MapPin size={16} color={active ? 'var(--coral)' : 'var(--text-light)'} />
+                        <span style={{ flex: 1 }}>{l.label}</span>
+                        {active && <Check size={16} color="var(--coral)" />}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>

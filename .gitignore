@@ -23,3 +23,6 @@ server/.env
 *.njsproj
 *.sln
 *.sw?
+
+# Local env files (contain secrets)
+.env

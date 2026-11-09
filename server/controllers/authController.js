@@ -21,6 +21,7 @@ export const registerUser = async (req, res, next) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      role: user.role,
       addresses: user.addresses,
       token: generateToken(user._id),
     })
@@ -43,6 +44,7 @@ export const loginUser = async (req, res, next) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      role: user.role,
       addresses: user.addresses,
       token: generateToken(user._id),
     })
@@ -62,6 +64,7 @@ export const getUserProfile = async (req, res, next) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      role: user.role,
       addresses: user.addresses,
     })
   } catch (error) {
@@ -94,6 +97,7 @@ export const updateUserProfile = async (req, res, next) => {
       name: updated.name,
       email: updated.email,
       phone: updated.phone,
+      role: updated.role,
       addresses: updated.addresses,
     })
   } catch (error) {

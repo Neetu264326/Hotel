@@ -53,3 +53,16 @@ export const orderAPI = {
 export const aiAPI = {
   chat: (message, history = []) => client.post('/ai/chat', { message, history }),
 }
+
+export const adminAPI = {
+  dashboard: () => client.get('/admin/dashboard'),
+  orders: (params = {}) => client.get(`/admin/orders?${new URLSearchParams(params).toString()}`),
+  updateOrderStatus: (id, status) => client.put(`/admin/orders/${id}/status`, { status }),
+  customers: () => client.get('/admin/customers'),
+  createRestaurant: (data) => client.post('/admin/restaurants', data),
+  updateRestaurant: (id, data) => client.put(`/admin/restaurants/${id}`, data),
+  deleteRestaurant: (id) => client.delete(`/admin/restaurants/${id}`),
+  createFood: (data) => client.post('/admin/foods', data),
+  updateFood: (id, data) => client.put(`/admin/foods/${id}`, data),
+  deleteFood: (id) => client.delete(`/admin/foods/${id}`),
+}
